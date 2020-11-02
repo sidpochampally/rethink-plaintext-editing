@@ -25,8 +25,32 @@ const TYPE_TO_ICON = {
 };
 
 function FilesTable({ files, activeFile, setActiveFile }) {
+  //implementation of the live search functionality
+  const [input, setInput] = useState('');
+
+  //function to get the value typed in the input field
+  const handleChange = (e) => {
+    e.preventDefault();
+    setInput(e.target.value);
+  };
+
+  if(input.length > 0) {
+    files = files.filter((file) => {
+      return file.name.toLowerCase().match(input);
+    });
+  }
+
   return (
     <div className={css.files}>
+      <div>
+        <input
+          type="text"
+          placeholder="Search"
+          onChange={handleChange}
+          value={input}
+        />
+      </div>
+
       <table>
         <thead>
           <tr>
@@ -78,6 +102,7 @@ FilesTable.propTypes = {
 
 function Previewer({ file }) {
   const [value, setValue] = useState('');
+  const [type, setType] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -88,7 +113,11 @@ function Previewer({ file }) {
   return (
     <div className={css.preview}>
       <div className={css.title}>{path.basename(file.name)}</div>
-      <div className={css.content}>{value}</div>
+      <div className={css.content}>
+        <pre>
+          <code className={"language-" + type}>{`${value}`}</code>
+        </pre>
+      </div>
     </div>
   );
 }
@@ -99,8 +128,8 @@ Previewer.propTypes = {
 
 // Uncomment keys to register editors for media types
 const REGISTERED_EDITORS = {
-  // "text/plain": PlaintextEditor,
-  // "text/markdown": MarkdownEditor,
+  "text/plain": PlaintextEditor,
+  "text/markdown": MarkdownEditor,
 };
 
 function PlaintextFilesChallenge() {
@@ -112,10 +141,14 @@ function PlaintextFilesChallenge() {
     setFiles(files);
   }, []);
 
-  const write = file => {
+  const write = (file, text) => {
     console.log('Writing soon... ', file.name);
 
     // TODO: Write the file to the `files` array
+    let filesCopy = [...files];
+    const fileIndex = filesCopy.findIndex((f) => f.name === file.name);
+    filesCopy[fileIndex] = file;
+    setFiles(filesCopy);
   };
 
   const Editor = activeFile ? REGISTERED_EDITORS[activeFile.type] : null;
@@ -124,6 +157,11 @@ function PlaintextFilesChallenge() {
     <div className={css.page}>
       <Head>
         <title>Rethink Engineering Challenge</title>
+        <script src="https://rawgit.com/basecamp/trix/master/dist/trix.js"></script>
+        <link
+          rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/trix/1.2.4/trix.min.css"
+        />
       </Head>
       <aside>
         <header>
